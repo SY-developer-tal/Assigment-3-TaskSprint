@@ -283,3 +283,135 @@ Fixed both issues. Added `aria-label="New task"` to the input in `App.tsx`. Upda
 ✓ moves a task from To Do to In Progress and then to Done
 ✓ deletes a task
 ```
+
+---
+
+## Iteration 2 — FlowBoard Assignment Update (2026HI) — September 2026
+
+### User Input
+
+A new version of the assignment has been provided (`FlowBoard-assignment-2026HI.pdf`). Analyse the differences from the original assignment and create an implementation plan.
+
+### Planner Response
+
+After rigorous comparison of both PDFs, the key differences are:
+
+**NEW requirements:**
+1. Unit tests are now **required** (previously unmentioned)
+2. A new `TEST_STRATEGY.md` deliverable must be submitted
+3. A filtering feature (optional) is expected — show only one column at a time
+
+**Changed:**
+- Video sharing recipients changed from Dipen/Nilesh/Sachin to **Vishal.Palasgaonkar** and **OmPrakash.Pachoriya**
+- Drag-and-drop now explicitly calls out native browser events (mousedown, mousemove) — our existing HTML5 DnD implementation is compliant but needs documentation
+
+**Same:** all core features (columns, add/move/delete, localStorage, no external DnD libs, README, ARCHITECTURE, PROJECT_STRUCTURE, CHAT_HISTORY) are unchanged.
+
+---
+
+### User Input
+
+Since unit tests and `TEST_STRATEGY.md` are now mandatory deliverables, let's step back and discuss our testing strategy before writing code.
+1. Which testing framework and runner should we use (Vitest vs Jest)?
+2. What should be our overall testing philosophy (testing implementation details vs behavior-driven tests)?
+3. What scenarios must we cover, and what should we intentionally exclude with clear rationale (especially around drag-and-drop and localStorage)?
+
+### Planner Response
+
+Here is the proposed testing strategy and the key trade-offs to document in `TEST_STRATEGY.md`:
+
+#### 1. Tooling Choice: Vitest + React Testing Library (RTL)
+
+- **Vitest over Jest**: Since this project is built on Vite, Vitest is the natural fit. It reuses the exact same Vite configuration and plugins, requires zero extra Babel or TypeScript transform configuration, boots instantly, and natively supports ESM and TypeScript.
+- **RTL + `@testing-library/user-event`**: Simulates realistic user interactions (typing, clicking, keyboard navigation) using real browser-like event sequencing rather than artificial synthetic triggers.
+- **`@testing-library/jest-dom` + `jsdom`**: Provides semantic DOM matchers (`toBeInTheDocument`, `toBeDisabled`) in a lightweight Node.js simulated DOM environment.
+
+#### 2. Testing Philosophy: Behavior-Driven (Black-Box)
+
+- **Test observable behavior, not internals**: We should test what end users see and do on screen. We will not import or assert on React component internal state, private hooks, or prop contracts.
+- **Accessibility-first queries**: Query elements by accessible role and label (`getByRole`, `getByLabelText`). This guarantees both functional correctness and accessibility compliance (WCAG).
+
+#### 3. Scope: What to Cover vs What to Exclude
+
+**What we will test (11 core test cases):**
+- **Board & Filter Rendering**: Verify all 3 fixed columns (To Do, In Progress, Done) and filter pills render.
+- **Task Creation**:
+  - Happy path: typing title and pressing Enter adds task to To Do.
+  - Validation: empty or whitespace-only inputs disable the Add button.
+  - Reset: input clears immediately after successful submission.
+- **Task Movement**:
+  - Move forward: To Do → In Progress → Done via card move button.
+  - Move backward: In Progress → To Do via previous column button.
+- **Task Deletion**: Clicking ✕ removes the task from the board.
+- **Persistence (localStorage)**: Adding a task, unmounting `<App />`, and remounting restores the task, simulating a browser reload.
+- **Column Filtering**: Clicking "In Progress" isolates that column and hides others; clicking "All" restores all three columns.
+
+**What we will intentionally exclude (with documented rationale):**
+- **Native HTML5 Drag-and-Drop at DOM level**: `jsdom` does not implement full pointer/drag physics (`dragstart`, `dragover`, `drop` dataTransfer lifecycles). Mocking them in jsdom results in brittle tests that test mocks rather than code. Testing state transitions via card action buttons provides full logical coverage; real DnD is best verified via E2E tools (Playwright/Cypress) or manual validation.
+- **CSS / Pixel rendering**: Visual aesthetics (glassmorphism, gradients) cannot be validated in jsdom and belong in visual regression tools (Storybook/Chromatic).
+- **5MB localStorage quota limits**: Edge cases around exceeding browser storage quotas are not practical risks for task title strings in this scope.
+
+If this testing strategy sounds good, I'll document it in `TEST_STRATEGY.md` and expand `App.test.tsx` to implement these 11 test cases.
+
+---
+
+### User Input
+
+Proceed with implementing all the new requirements.
+
+### Planner Response
+
+Implementing all changes in priority order:
+
+**P0 — Required by assignment:**
+
+1. Expanded `App.test.tsx` from 4 tests to **11 tests** covering:
+   - Column/filter bar rendering
+   - Add task (success, disabled on empty, clears input)
+   - Move task forward and backward
+   - Delete task
+   - localStorage persistence (simulate page refresh via unmount/remount)
+   - Filter by column (hides non-matching columns)
+   - Filter reset to All
+
+2. Created `TEST_STRATEGY.md` — documents framework (Vitest + RTL), what is/isn't tested, philosophy, and full coverage table.
+
+3. Confirmed `package.json` already had `"start": "vite"` — no change needed.
+
+**P1 — New feature:**
+
+4. Added `FilterOption` type to `types.ts`.
+
+5. Added filter bar UI to `App.tsx`:
+   - `activeFilter` state (`'all' | ColumnId`)
+   - `FILTER_OPTIONS` array driving pill buttons
+   - `isColumnVisible()` helper to conditionally render columns
+   - Each pill shows a live count badge for that column
+   - When a filter is active, the board switches to `single-column-view` (centred, full-width)
+
+6. Added filter styles to `App.css` — pill design with active/hover states, count badge, single-column layout override.
+
+**P2 — Documentation:**
+
+7. Updated `README.md` — `npm run start` now listed first, test commands added, new video sharing contacts updated, documentation table added linking all deliverable files.
+
+**Trade-off decisions made in this iteration:**
+
+- **Filter UX**: Chose Option A (hide non-matching columns, single-column view) over dimming because it gives the clearest visual focus and matches how tools like Jira's "board filter" behave.
+- **Test count**: 11 tests chosen as the right balance — covers every user-observable behavior without testing implementation internals.
+- **State approach**: Kept lifted state (no Context/Redux) — justified in the updated ARCHITECTURE.md trade-offs table.
+
+All 11 tests pass:
+```
+✓ renders three columns with headers
+✓ renders the filter bar with all options
+✓ adds a task to To Do
+✓ does not add a task when the title is empty or whitespace-only
+✓ clears the input field after adding a task
+✓ moves a task from To Do to In Progress and then to Done
+✓ moves a task backwards from In Progress to To Do
+✓ deletes a task
+✓ persists tasks to localStorage
+✓ filter by In Progress hides other columns
+✓ resets to all columns when All filter is clicked
+```

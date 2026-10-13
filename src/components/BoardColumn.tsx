@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import type { ReactNode, DragEvent } from 'react'
 import type { ColumnId } from '../types'
 
 interface BoardColumnProps {
@@ -6,9 +6,9 @@ interface BoardColumnProps {
     title: string
     count: number
     isDropTarget: boolean
-    onDragOver: (e: React.DragEvent) => void
+    onDragOver: (e: DragEvent) => void
     onDragLeave: () => void
-    onDrop: (e: React.DragEvent) => void
+    onDrop: (e: DragEvent) => void
     children: ReactNode
 }
 

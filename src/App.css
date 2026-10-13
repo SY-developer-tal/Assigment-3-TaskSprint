@@ -27,12 +27,18 @@
   font-size: 1.1rem;
 }
 
-/* Kanban Board Layout */
+/* Kanban Board Layout (Three-column layout: 33% each) */
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
   align-items: start;
+}
+
+@media (max-width: 900px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Column Component Styles */
@@ -214,3 +220,66 @@
   border: 1px dashed var(--surface-border);
   border-radius: var(--radius-md);
 }
+
+/* ── Filter Bar ─────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid var(--surface-border);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pill:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-pill.active {
+  background: var(--accent-color);
+  color: #0f172a;
+  border-color: var(--accent-color);
+  font-weight: 700;
+}
+
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.2);
+  line-height: 1;
+}
+
+.filter-pill.active .filter-count {
+  background: rgba(0, 0, 0, 0.25);
+  color: #0f172a;
+}
+
+/* Single column view — when filter is active, expand to fill */
+.kanban-board.single-column-view {
+  grid-template-columns: 1fr;
+  max-width: 600px;
+  margin: 0 auto;
+}
